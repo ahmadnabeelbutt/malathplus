@@ -4,6 +4,7 @@ const helmet = require("helmet");
 const morgan = require("morgan");
 const sequelize = require("./config/database");
 const authRoutes = require("./routes/authRoutes");
+const InvoiceRoutes = require("./routes/InvoiceRoutes");
 require("dotenv").config();
 
 const app = express();
@@ -16,6 +17,7 @@ app.use(morgan("dev"));
 
 // Routes
 app.use("/api/auth", authRoutes);
+app.use("/api/invoice", InvoiceRoutes);
 
 app.get("/", (req, res) => {
   res.send("API is running.......");

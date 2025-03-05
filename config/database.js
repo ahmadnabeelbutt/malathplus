@@ -19,3 +19,4 @@ sequelize
   .catch((err) => console.error("❌ Database Connection Error:", err));
 
 module.exports = sequelize;
+ 
