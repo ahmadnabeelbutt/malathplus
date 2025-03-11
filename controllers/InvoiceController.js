@@ -7,10 +7,55 @@ const path = require('path');
 // Create Invoice
 exports.createInvoice = async (req, res) => {
   try {
-    const invoice = await Invoice.create(req.body);
-    res.status(201).json(invoice);
+    const {
+      customer_name,
+      invoice_number,
+      currency,
+      date,
+      due_date,
+      purchase_order,
+      reference,
+      project,
+      warehouse,
+      line_items,
+      total_amount,
+      status
+    } = req.body;
+
+    // Input validation
+    if (!customer_name || !invoice_number || !currency || !date || !due_date || !Array.isArray(line_items) || line_items.length === 0) {
+      return res.status(400).json({ message: "Missing required fields or invalid line items" });
+    }
+
+    // Validate line items and calculate total amount
+   
+    const processedItems = line_items.map((item) => {
+      if (!item.description || !item.account || !item.quantity || !item.price) {
+        throw new Error("Each line item must have description, account, quantity, and price");
+      }
+     
+      return { ...item };
+    });
+
+    // Create invoice
+    const newInvoice = await Invoice.create({
+      customer_name,
+      invoice_number,
+      currency,
+      date,
+      due_date,
+      purchase_order,
+      reference,
+      project,
+      warehouse,
+      line_items: processedItems,
+      total_amount,
+      status
+    });
+
+    res.status(201).json({ message: "Invoice created successfully", invoice: newInvoice });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    res.status(500).json({ message: "Internal server error", error: error.message });
   }
 };
 
