@@ -7,7 +7,7 @@ const Organization = require("../models/Organization");
  */
 exports.addOrganization = async (req, res) => {
   try {
-    const { companyName, industry, numberOfEmployees, baseCurrency, country } = req.body;
+    const { companyName, industry, numberOfEmployees, baseCurrency, country, image } = req.body;
     const userId = req.user.id;
 
     const organization = await Organization.create({
@@ -16,6 +16,7 @@ exports.addOrganization = async (req, res) => {
       numberOfEmployees,
       baseCurrency,
       country,
+      image, // Save image URL
       userId,
     });
 
@@ -24,6 +25,7 @@ exports.addOrganization = async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 };
+
 
 /**
  * @desc Get all organizations of a user
