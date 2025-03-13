@@ -10,7 +10,7 @@ require("dotenv").config();
  */
 exports.registerUser = async (req, res) => {
   try {
-    const { name, email, password } = req.body;
+    const { firstName, lastName, email, contact, password } = req.body;
     
     // Check if user already exists
     let user = await User.findOne({ where: { email } });
@@ -18,7 +18,7 @@ exports.registerUser = async (req, res) => {
 
     // Hash password and create user
     const hashedPassword = await bcrypt.hash(password, 10);
-    user = await User.create({ name, email, password: hashedPassword });
+    user = await User.create({ firstName, lastName, email, contact, password: hashedPassword });
 
     res.status(201).json({ msg: "User registered successfully", user });
   } catch (error) {
@@ -60,7 +60,10 @@ exports.loginUser = async (req, res) => {
 exports.getProfile = async (req, res) => {
   try {
     // Fetch user based on ID from JWT
-    const user = await User.findByPk(req.user.id, { attributes: ["id", "name", "email"] });
+    const user = await User.findByPk(req.user.id, { 
+      attributes: ["id", "firstName", "lastName", "email", "contact"] 
+    });
+
     if (!user) return res.status(404).json({ msg: "User not found" });
 
     res.json(user);

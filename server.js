@@ -5,6 +5,7 @@ const morgan = require("morgan");
 const sequelize = require("./config/database");
 const authRoutes = require("./routes/authRoutes");
 const InvoiceRoutes = require("./routes/InvoiceRoutes");
+const OraganizationRoutes = require("./routes/OrganizationRoutes");
 require("dotenv").config();
 
 const app = express();
@@ -18,6 +19,7 @@ app.use(morgan("dev"));
 // Routes
 app.use("/api/auth", authRoutes);
 app.use("/api/invoice", InvoiceRoutes);
+app.use("/api/organization", OraganizationRoutes);
 
 app.get("/", (req, res) => {
   res.send("API is running.......");
