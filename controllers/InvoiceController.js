@@ -80,6 +80,30 @@ exports.getInvoiceById = async (req, res) => {
   }
 };
 
+
+// Get invoices by organization ID
+exports.getInvoicesByOrganization = async (req, res) => {
+  try {
+    const { organization_id } = req.params;
+
+    // Validate that organization_id is provided
+    if (!organization_id) {
+      return res.status(400).json({ message: "Organization ID is required" });
+    }
+
+    // Fetch invoices for the given organization_id
+    const invoices = await Invoice.findAll({
+      where: { organization_id },
+      order: [['date', 'DESC']], // Sort by date in descending order
+    });
+
+    res.status(200).json({ success: true, invoices });
+  } catch (error) {
+    console.error("Error fetching invoices by organization:", error);
+    res.status(500).json({ message: "Internal server error", error: error.message });
+  }
+};
+
 // Generate Invoice PDF
 exports.generateInvoicePDF = async (req, res) => {
     try {
