@@ -1,5 +1,5 @@
 const express = require("express");
-const { addOrganization, updateOrganization, deleteOrganization, getOrganizations } = require("../controllers/organizationController");
+const { addOrganization, updateOrganization, deleteOrganization, getOrganizations } = require("../controllers/OrganizationController");
 const authMiddleware = require("../middlewares/authMiddleware");
 
 const router = express.Router();
