@@ -10,6 +10,13 @@ exports.addOrganization = async (req, res) => {
     const { companyName, industry, numberOfEmployees, baseCurrency, country, image } = req.body;
     const userId = req.user.id;
 
+    // Check if the user already has an organisation
+    const existingOrganization = await Organization.findOne({ where: { userId } });
+
+    if (existingOrganization) {
+      return res.status(400).json({ msg: "You can only create one organisation." });
+    }
+    
     const organization = await Organization.create({
       companyName,
       industry,
