@@ -21,6 +21,34 @@ const sendOtpSMS = (phoneNumber, otp) => {
   });
 };
 
+
+/**
+ * @desc Check if user exists by email
+ * @route POST /api/auth/check-user-exists
+ * @access Public
+ */
+exports.checkUserExists = async (req, res) => {
+  try {
+    const { email } = req.body;
+
+    // Check if email is provided
+    if (!email) {
+      return res.status(400).json({ msg: "Email is required" });
+    }
+
+    // Check if user already exists
+    let user = await User.findOne({ where: { email } });
+    if (user) {
+      return res.status(200).json({ msg: "User already exists" });
+    } else {
+      return res.status(200).json({ msg: "User does not exist" });
+    }
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+
 /**
  * @desc Register a new user
  * @route POST /api/auth/register
