@@ -5,7 +5,11 @@ const morgan = require("morgan");
 const sequelize = require("./config/database");
 const authRoutes = require("./routes/authRoutes");
 const InvoiceRoutes = require("./routes/InvoiceRoutes");
+<<<<<<< HEAD
 const Routes = require("./routes/api");
+=======
+const OraganizationRoutes = require("./routes/OrganizationRoutes");
+>>>>>>> origin/main
 require("dotenv").config();
 
 const app = express();
@@ -19,11 +23,18 @@ app.use(morgan("dev"));
 // Routes
 app.use("/api/auth", authRoutes);
 app.use("/api/invoice", InvoiceRoutes);
+<<<<<<< HEAD
 
 app.use("/api/", Routes);
 
 app.use((req, res) => {
   res.status(404).json({ "error": 'Not Found' });
+=======
+app.use("/api/organization", OraganizationRoutes);
+
+app.get("/", (req, res) => {
+  res.send("API is running.......");
+>>>>>>> origin/main
 });
 
 // Start Server

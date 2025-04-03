@@ -1,8 +1,59 @@
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const User = require("../models/User");
+<<<<<<< HEAD
 require("dotenv").config();
 
+=======
+const crypto = require("crypto");
+const sendVerificationEmail = require("../utils/sendEmail");
+const speakeasy = require("speakeasy"); // For OTP generation
+const twilio = require("twilio"); // For SMS sending
+require("dotenv").config();
+
+
+// Twilio configuration
+const twilioClient = twilio(process.env.TWILIO_SID, process.env.TWILIO_TOKEN);
+const twilioPhoneNumber = process.env.TWILIO_PHONE_NUMBER;  // Your Twilio phone number
+
+// Send OTP SMS function
+const sendOtpSMS = (phoneNumber, otp) => {
+  return twilioClient.messages.create({
+    body: `Your OTP code is ${otp}`,
+    from: twilioPhoneNumber,
+    to: phoneNumber
+  });
+};
+
+
+/**
+ * @desc Check if user exists by email
+ * @route POST /api/auth/check-user-exists
+ * @access Public
+ */
+exports.checkUserExists = async (req, res) => {
+  try {
+    const { email } = req.body;
+
+    // Check if email is provided
+    if (!email) {
+      return res.status(400).json({ msg: "Email is required" });
+    }
+
+    // Check if user already exists
+    let user = await User.findOne({ where: { email } });
+    if (user) {
+      return res.status(200).json({ msg: "User already exists" });
+    } else {
+      return res.status(200).json({ msg: "User does not exist" });
+    }
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+
+>>>>>>> origin/main
 /**
  * @desc Register a new user
  * @route POST /api/auth/register
@@ -10,7 +61,11 @@ require("dotenv").config();
  */
 exports.registerUser = async (req, res) => {
   try {
+<<<<<<< HEAD
     const { name, email, password } = req.body;
+=======
+    const { firstName, lastName, email, contact, password } = req.body;
+>>>>>>> origin/main
     
     // Check if user already exists
     let user = await User.findOne({ where: { email } });
@@ -18,9 +73,33 @@ exports.registerUser = async (req, res) => {
 
     // Hash password and create user
     const hashedPassword = await bcrypt.hash(password, 10);
+<<<<<<< HEAD
     user = await User.create({ name, email, password: hashedPassword });
 
     res.status(201).json({ msg: "User registered successfully", user });
+=======
+
+    // Generate a unique verification token
+    const verificationToken = crypto.randomBytes(32).toString("hex");
+
+    user = await User.create({ 
+      firstName, 
+      lastName, 
+      email, 
+      contact, 
+      password: hashedPassword,
+      isVerified: false,
+      verificationToken,
+    });
+    // Generate email verification link
+    const verificationLink = `http://localhost:5000/api/auth/verify-email?token=${verificationToken}`;
+
+    // Send email
+    await sendVerificationEmail(email, verificationLink);
+
+    res.status(201).json({ msg: "User registered. Verification email sent.", user, verificationLink });
+    //res.status(201).json({ msg: "User registered successfully", user });
+>>>>>>> origin/main
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -35,7 +114,16 @@ exports.loginUser = async (req, res) => {
   try {
     const { email, password } = req.body;
 
+<<<<<<< HEAD
     // Check if user exists
+=======
+    // Check if email and password are provided
+    if (!email || !password) {
+      return res.status(400).json({ msg: "Email and password are required" });
+    }
+
+    // Find the user by email
+>>>>>>> origin/main
     const user = await User.findOne({ where: { email } });
     if (!user) return res.status(400).json({ msg: "Invalid credentials" });
 
@@ -43,9 +131,68 @@ exports.loginUser = async (req, res) => {
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) return res.status(400).json({ msg: "Invalid credentials" });
 
+<<<<<<< HEAD
     // Generate JWT token
     const token = jwt.sign({ id: user.id }, process.env.JWT_SECRET, { expiresIn: "1h" });
 
+=======
+    /*
+    // Generate OTP secret and OTP code
+    const secret = speakeasy.generateSecret({ length: 20 });
+    const otp = speakeasy.totp({ secret: secret.base32, encoding: 'base32' });
+
+    // Store OTP secret in the user record
+    user.otpSecret = secret.base32;
+    user.otpExpiresAt = new Date(Date.now() + 5 * 60 * 1000); // OTP expiration time (5 minutes)
+    await user.save();
+    console.log(user.contact);
+    // Send OTP via SMS
+    await sendOtpSMS(user.contact, otp); // Assuming you have a utility to send OTP via SMS
+
+    res.json({ msg: "OTP sent to your phone. Please enter it to proceed." });
+
+    */
+    const token = jwt.sign({ id: user.id }, process.env.JWT_SECRET, { expiresIn: "1h" });
+    // Return the JWT token and user info
+    res.json({ token, user });
+  } catch (error) {
+    //console.error("Login error:", error);
+    res.status(500).json({ error: error.message });
+  }
+};
+
+/**
+ * @desc Verify OTP and login user (returns JWT)
+ * @route POST /api/auth/verify-otp
+ * @access Public
+ */
+exports.verifyOtpAndLogin = async (req, res) => {
+  try {
+    const { email, otp } = req.body;
+
+    // Find the user by email
+    const user = await User.findOne({ where: { email } });
+    if (!user) return res.status(400).json({ msg: "User not found" });
+
+    // Verify the OTP entered by the user
+    const isValidOtp = speakeasy.totp.verify({
+      secret: user.otpSecret,
+      encoding: 'base32',
+      token: otp,
+      window: 1  // Adjust time window as needed
+    });
+
+    if (!isValidOtp) return res.status(400).json({ msg: "Invalid OTP" });
+
+    // OTP is valid, now generate a JWT token
+    const token = jwt.sign({ id: user.id }, process.env.JWT_SECRET, { expiresIn: "1h" });
+
+    // Clear OTP secret after successful verification
+    user.otpSecret = null; // Or store it securely in DB if needed for future reference
+    await user.save();
+
+    // Return the JWT token and user info
+>>>>>>> origin/main
     res.json({ token, user });
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -60,7 +207,14 @@ exports.loginUser = async (req, res) => {
 exports.getProfile = async (req, res) => {
   try {
     // Fetch user based on ID from JWT
+<<<<<<< HEAD
     const user = await User.findByPk(req.user.id, { attributes: ["id", "name", "email"] });
+=======
+    const user = await User.findByPk(req.user.id, { 
+      attributes: ["id", "firstName", "lastName", "email", "contact"] 
+    });
+
+>>>>>>> origin/main
     if (!user) return res.status(404).json({ msg: "User not found" });
 
     res.json(user);
@@ -69,3 +223,32 @@ exports.getProfile = async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 };
+<<<<<<< HEAD
+=======
+
+/**
+ * @desc Verify user's email
+ * @route GET /api/auth/verify-email
+ * @access Public
+ */
+exports.verifyEmail = async (req, res) => {
+  try {
+    const { token } = req.query;
+
+    // Find user by token
+    const user = await User.findOne({ where: { verificationToken: token } });
+    if (!user) return res.status(400).json({ msg: "Invalid or expired token" });
+
+    // Mark user as verified
+    user.isVerified = true;
+    user.verificationToken = null; // Remove token after verification
+    await user.save();
+
+    res.json({ msg: "Email verified successfully. You can now log in." });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+
+>>>>>>> origin/main
