@@ -1,10 +1,6 @@
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const User = require("../models/User");
-<<<<<<< HEAD
-require("dotenv").config();
-
-=======
 const crypto = require("crypto");
 const sendVerificationEmail = require("../utils/sendEmail");
 const speakeasy = require("speakeasy"); // For OTP generation
@@ -53,7 +49,6 @@ exports.checkUserExists = async (req, res) => {
 };
 
 
->>>>>>> origin/main
 /**
  * @desc Register a new user
  * @route POST /api/auth/register
@@ -61,11 +56,7 @@ exports.checkUserExists = async (req, res) => {
  */
 exports.registerUser = async (req, res) => {
   try {
-<<<<<<< HEAD
-    const { name, email, password } = req.body;
-=======
     const { firstName, lastName, email, contact, password } = req.body;
->>>>>>> origin/main
     
     // Check if user already exists
     let user = await User.findOne({ where: { email } });
@@ -73,11 +64,6 @@ exports.registerUser = async (req, res) => {
 
     // Hash password and create user
     const hashedPassword = await bcrypt.hash(password, 10);
-<<<<<<< HEAD
-    user = await User.create({ name, email, password: hashedPassword });
-
-    res.status(201).json({ msg: "User registered successfully", user });
-=======
 
     // Generate a unique verification token
     const verificationToken = crypto.randomBytes(32).toString("hex");
@@ -99,7 +85,6 @@ exports.registerUser = async (req, res) => {
 
     res.status(201).json({ msg: "User registered. Verification email sent.", user, verificationLink });
     //res.status(201).json({ msg: "User registered successfully", user });
->>>>>>> origin/main
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -114,16 +99,12 @@ exports.loginUser = async (req, res) => {
   try {
     const { email, password } = req.body;
 
-<<<<<<< HEAD
-    // Check if user exists
-=======
     // Check if email and password are provided
     if (!email || !password) {
       return res.status(400).json({ msg: "Email and password are required" });
     }
 
     // Find the user by email
->>>>>>> origin/main
     const user = await User.findOne({ where: { email } });
     if (!user) return res.status(400).json({ msg: "Invalid credentials" });
 
@@ -131,11 +112,6 @@ exports.loginUser = async (req, res) => {
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) return res.status(400).json({ msg: "Invalid credentials" });
 
-<<<<<<< HEAD
-    // Generate JWT token
-    const token = jwt.sign({ id: user.id }, process.env.JWT_SECRET, { expiresIn: "1h" });
-
-=======
     /*
     // Generate OTP secret and OTP code
     const secret = speakeasy.generateSecret({ length: 20 });
@@ -192,7 +168,6 @@ exports.verifyOtpAndLogin = async (req, res) => {
     await user.save();
 
     // Return the JWT token and user info
->>>>>>> origin/main
     res.json({ token, user });
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -207,14 +182,10 @@ exports.verifyOtpAndLogin = async (req, res) => {
 exports.getProfile = async (req, res) => {
   try {
     // Fetch user based on ID from JWT
-<<<<<<< HEAD
-    const user = await User.findByPk(req.user.id, { attributes: ["id", "name", "email"] });
-=======
     const user = await User.findByPk(req.user.id, { 
       attributes: ["id", "firstName", "lastName", "email", "contact"] 
     });
 
->>>>>>> origin/main
     if (!user) return res.status(404).json({ msg: "User not found" });
 
     res.json(user);
@@ -223,8 +194,6 @@ exports.getProfile = async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 };
-<<<<<<< HEAD
-=======
 
 /**
  * @desc Verify user's email
@@ -251,4 +220,3 @@ exports.verifyEmail = async (req, res) => {
 };
 
 
->>>>>>> origin/main
