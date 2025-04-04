@@ -1,13 +1,27 @@
-// controllers/invoiceController.js
-const Invoice = require('../models/Invoice');
-const PDFDocument = require('pdfkit');
-const fs = require('fs');
-const path = require('path');
+const { Op } = require("sequelize");
+const Invoice = require("../models/Invoice");
+const Organization = require("../models/Organization");
 
-// Create Invoice
-exports.createInvoice = async (req, res) => {
+/**
+ * @desc Add a new invoice
+ * @route POST /api/invoices/add
+ * @access Private
+ */
+exports.addInvoice = async (req, res) => {
   try {
-    const {
+    const { customer_name, invoice_number, currency, date, due_date, purchase_order, reference, project, warehouse, line_items, total_amount } = req.body;
+    const userId = req.user.id;
+    
+    // Get the user's organization
+    const organization = await Organization.findOne({ where: { userId } });
+    if (!organization) {
+      return res.status(400).json({ msg: "You must have an organization to create invoices" });
+    }
+
+    // Create invoice for the organization
+    const invoice = await Invoice.create({
+      user_id: userId,
+      organization_id: organization.id,
       customer_name,
       invoice_number,
       currency,
@@ -19,137 +33,142 @@ exports.createInvoice = async (req, res) => {
       warehouse,
       line_items,
       total_amount,
-      status
-    } = req.body;
-
-    // Input validation
-    if (!customer_name || !invoice_number || !currency || !date || !due_date || !Array.isArray(line_items) || line_items.length === 0) {
-      return res.status(400).json({ message: "Missing required fields or invalid line items" });
-    }
-
-    // Validate line items and calculate total amount
-   
-    const processedItems = line_items.map((item) => {
-      if (!item.description || !item.account || !item.quantity || !item.price) {
-        throw new Error("Each line item must have description, account, quantity, and price");
-      }
-     
-      return { ...item };
+      status: 'draft', // Default status for newly created invoices
     });
 
-    // Create invoice
-    const newInvoice = await Invoice.create({
-      customer_name,
-      invoice_number,
-      currency,
-      date,
-      due_date,
-      purchase_order,
-      reference,
-      project,
-      warehouse,
-      line_items: processedItems,
-      total_amount,
-      status
-    });
-
-    res.status(201).json({ message: "Invoice created successfully", invoice: newInvoice });
+    res.status(201).json({ msg: "Invoice created successfully", invoice });
   } catch (error) {
-    res.status(500).json({ message: "Internal server error", error: error.message });
+    res.status(500).json({ error: error.message });
   }
 };
 
-// Get All Invoices
-exports.getAllInvoices = async (req, res) => {
+// Get all invoices for a user's account
+exports.getInvoices = async (req, res) => {
   try {
-    const invoices = await Invoice.findAll();
+    const userId = req.user.id;  // Get the authenticated user's ID
+
+    // Fetch all invoices for the user (no organization filtering)
+    const invoices = await Invoice.findAll({ where: { user_id: userId } });
+
+    if (!invoices || invoices.length === 0) {
+      return res.status(404).json({ msg: "No invoices found for this user." });
+    }
+
     res.json(invoices);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
 };
 
-// Get Single Invoice by ID
+/**
+ * @desc Get all invoices for a user's organization
+ * @route GET /api/invoices/getOrganizationInvoices
+ * @access Private
+ */
+exports.getOrganizationInvoices = async (req, res) => {
+  try {
+    const userId = req.user.id;
+
+    // Get the user's organization
+    const organization = await Organization.findOne({ where: { userId } });
+    if (!organization) {
+      return res.status(400).json({ msg: "Organization not found" });
+    }
+
+    // Fetch invoices related to this organization
+    const invoices = await Invoice.findAll({ where: { organization_id: organization.id } });
+
+    res.json(invoices);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+/**
+ * @desc Get a specific invoice by its ID
+ * @route GET /api/invoices/getInvoiceById/:id
+ * @access Private
+ */
 exports.getInvoiceById = async (req, res) => {
   try {
-    const invoice = await Invoice.findByPk(req.params.id);
-    if (!invoice) return res.status(404).json({ error: "Invoice not found" });
+    const { id } = req.params;
+    const userId = req.user.id;
+
+    // Get the user's organization
+    const organization = await Organization.findOne({ where: { userId } });
+    if (!organization) {
+      return res.status(400).json({ msg: "Organization not found" });
+    }
+
+    // Fetch the invoice by ID and ensure it's associated with the user's organization
+    const invoice = await Invoice.findOne({
+      where: { id, organization_id: organization.id },
+    });
+
+    if (!invoice) {
+      return res.status(404).json({ msg: "Invoice not found" });
+    }
+
     res.json(invoice);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
 };
 
-
-// Get invoices by organization ID
-exports.getInvoicesByOrganization = async (req, res) => {
+/**
+ * @desc Update an invoice
+ * @route PUT /api/invoices/update/:id
+ * @access Private
+ */
+exports.updateInvoice = async (req, res) => {
   try {
-    const { organization_id } = req.params;
+    const { id } = req.params;
+    const userId = req.user.id;
 
-    // Validate that organization_id is provided
-    if (!organization_id) {
-      return res.status(400).json({ message: "Organization ID is required" });
+    // Get the user's organization
+    const organization = await Organization.findOne({ where: { userId } });
+    if (!organization) {
+      return res.status(400).json({ msg: "Organization not found" });
     }
 
-    // Fetch invoices for the given organization_id
-    const invoices = await Invoice.findAll({
-      where: { organization_id },
-      order: [['date', 'DESC']], // Sort by date in descending order
-    });
+    let invoice = await Invoice.findOne({ where: { id, organization_id: organization.id } });
+    if (!invoice) {
+      return res.status(404).json({ msg: "Invoice not found" });
+    }
 
-    res.status(200).json({ success: true, invoices });
+    // Update the invoice
+    await invoice.update(req.body);
+
+    res.json({ msg: "Invoice updated successfully", invoice });
   } catch (error) {
-    console.error("Error fetching invoices by organization:", error);
-    res.status(500).json({ message: "Internal server error", error: error.message });
+    res.status(500).json({ error: error.message });
   }
 };
 
-// Generate Invoice PDF
-exports.generateInvoicePDF = async (req, res) => {
-    try {
-      const invoice = await Invoice.findByPk(req.params.id);
-      if (!invoice) return res.status(404).json({ error: "Invoice not found" });
-  
-      // Define the invoices directory
-      const invoicesDir = path.join(__dirname, '../invoices');
-      
-      // Check if the directory exists, if not, create it
-      if (!fs.existsSync(invoicesDir)) {
-        fs.mkdirSync(invoicesDir, { recursive: true });
-      }
-  
-      // Define the file path
-      const pdfPath = path.join(invoicesDir, `invoice_${invoice.id}.pdf`);
-      const doc = new PDFDocument();
-  
-      // Stream the PDF to a file
-      const writeStream = fs.createWriteStream(pdfPath);
-      doc.pipe(writeStream);
-  
-      doc.fontSize(16).text(`Invoice #${invoice.id}`);
-      doc.text(`Customer: ${invoice.customer_name}`);
-      doc.text(`Amount: $${invoice.amount}`);
-      doc.text(`Status: ${invoice.status}`);
-      doc.end();
-  
-      // Wait for the PDF to finish writing before sending the response
-      writeStream.on('finish', () => {
-        res.download(pdfPath);
-      });
-  
-    } catch (error) {
-      res.status(500).json({ error: error.message });
-    }
-  };
-
-// Delete Invoice
+/**
+ * @desc Delete an invoice
+ * @route DELETE /api/invoices/delete/:id
+ * @access Private
+ */
 exports.deleteInvoice = async (req, res) => {
   try {
-    const invoice = await Invoice.findByPk(req.params.id);
-    if (!invoice) return res.status(404).json({ error: "Invoice not found" });
+    const { id } = req.params;
+    const userId = req.user.id;
+
+    // Get the user's organization
+    const organization = await Organization.findOne({ where: { userId } });
+    if (!organization) {
+      return res.status(400).json({ msg: "Organization not found" });
+    }
+
+    const invoice = await Invoice.findOne({ where: { id, organization_id: organization.id } });
+    if (!invoice) {
+      return res.status(404).json({ msg: "Invoice not found" });
+    }
 
     await invoice.destroy();
-    res.json({ message: "Invoice deleted successfully" });
+
+    res.json({ msg: "Invoice deleted successfully" });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }

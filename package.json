@@ -1,17 +1,10 @@
 {
   "name": "social-media-manager",
   "version": "1.0.0",
-<<<<<<< HEAD
-  "main": "index.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "node server.js"
-=======
   "description": "",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
->>>>>>> origin/main
   },
   "keywords": [],
   "author": "",
@@ -26,17 +19,6 @@
     "jsonwebtoken": "^9.0.2",
     "morgan": "^1.10.0",
     "mysql2": "^3.12.0",
-<<<<<<< HEAD
-    "pdfkit": "^0.16.0",
-    "pg": "^8.13.3",
-    "pg-hstore": "^2.3.4",
-    "sequelize": "^6.37.5"
-  },
-  "devDependencies": {
-    "nodemon": "^3.1.9"
-  },
-  "description": ""
-=======
     "nodemailer": "^6.10.0",
     "pdfkit": "^0.16.0",
     "pg": "^8.13.3",
@@ -48,5 +30,4 @@
   "devDependencies": {
     "nodemon": "^3.1.9"
   }
->>>>>>> origin/main
 }

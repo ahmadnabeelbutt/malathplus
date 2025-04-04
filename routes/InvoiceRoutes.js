@@ -1,13 +1,17 @@
-// routes/invoiceRoutes.js
-const express = require('express');
-const router = express.Router();
-const invoiceController = require('../controllers/InvoiceController');
+const express = require("express");
+const { addInvoice, getInvoices, updateInvoice, deleteInvoice, getOrganizationInvoices, getInvoiceById } = require("../controllers/InvoiceController");
+const authMiddleware = require("../middlewares/authMiddleware");
 
-router.post('/create', invoiceController.createInvoice);
-router.get('/getInvoices', invoiceController.getAllInvoices);
-router.get('/getInvoiceByOrg/:organization_id', invoiceController.getInvoicesByOrganization);
-router.get('/invoices/:id', invoiceController.getInvoiceById);
-router.get('/invoices/pdf/:id', invoiceController.generateInvoicePDF);
-router.delete('/invoices/:id', invoiceController.deleteInvoice);
+const router = express.Router();
+
+// Routes
+router.post("/add", authMiddleware, addInvoice); // Add Invoice
+router.get("/get", authMiddleware, getInvoices); // Get User's Invoices
+router.put("/update/:id", authMiddleware, updateInvoice); // Update Invoice
+router.delete("/delete/:id", authMiddleware, deleteInvoice); // Delete Invoice
+
+// New Routes
+router.get("/getOrganizationInvoices", authMiddleware, getOrganizationInvoices); // Get all invoices for user's organization
+router.get("/getInvoiceById/:id", authMiddleware, getInvoiceById); // Get invoice by its ID
 
 module.exports = router;
